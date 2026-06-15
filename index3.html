@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Star Catcher Game</title>
+
+<style>
+body{
+    margin:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    background:#0f172a;
+    font-family:Arial,sans-serif;
+}
+
+#game{
+    border:3px solid #38bdf8;
+    background:linear-gradient(#1e293b,#0f172a);
+}
+
+#info{
+    position:absolute;
+    top:20px;
+    color:white;
+    font-size:24px;
+    font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<div id="info">Skor: <span id="score">0</span></div>
+<canvas id="game" width="600" height="700"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const scoreText = document.getElementById("score");
+
+let score = 0;
+let gameOver = false;
+
+const player = {
+    x: 250,
+    y: 650,
+    width: 100,
+    height: 15,
+    speed: 25
+};
+
+const objects = [];
+
+document.addEventListener("mousemove", (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    player.x = e.clientX - rect.left - player.width/2;
+
+    if(player.x < 0) player.x = 0;
+    if(player.x > canvas.width-player.width)
+        player.x = canvas.width-player.width;
+});
+
+class FallingObject{
+    constructor(){
+        this.x = Math.random() * (canvas.width-30);
+        this.y = -30;
+        this.size = 30;
+        this.type = Math.random() < 0.8 ? "star" : "bomb";
+        this.speed = 3 + Math.random()*3;
+    }
+
+    update(){
+        this.y += this.speed;
+    }
+
+    draw(){
+        ctx.font = "30px Arial";
+        ctx.textAlign = "center";
+
+        if(this.type === "star"){
+            ctx.fillText("⭐", this.x, this.y);
+        }else{
+            ctx.fillText("💣", this.x, this.y);
+        }
+    }
+}
+
+function spawnObject(){
+    if(Math.random() < 0.03){
+        objects.push(new FallingObject());
+    }
+}
+
+function checkCollision(obj){
+    return (
+        obj.y > player.y &&
+        obj.x > player.x &&
+        obj.x < player.x + player.width
+    );
+}
+
+function drawPlayer(){
+    ctx.fillStyle = "#22d3ee";
+    ctx.fillRect(
+        player.x,
+        player.y,
+        player.width,
+        player.height
+    );
+}
+
+function update(){
+    if(gameOver) return;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    drawPlayer();
+    spawnObject();
+
+    for(let i = objects.length-1; i >= 0; i--){
+        objects[i].update();
+        objects[i].draw();
+
+        if(checkCollision(objects[i])){
+            if(objects[i].type === "star"){
+                score += 10;
+                scoreText.textContent = score;
+            }else{
+                gameOver = true;
+                setTimeout(()=>{
+                    alert("Game Over!\nSkor Akhir: " + score);
+                    location.reload();
+                },100);
+            }
+
+            objects.splice(i,1);
+            continue;
+        }
+
+        if(objects[i].y > canvas.height){
+            objects.splice(i,1);
+        }
+    }
+
+    requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
